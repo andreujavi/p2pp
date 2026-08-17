@@ -113,3 +113,4 @@ Thumbs.db
 
 # Ignorar archivos de configuración local del entorno si los hubiera
 .env
+node_modules/
