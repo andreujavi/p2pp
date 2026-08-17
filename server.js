@@ -4,7 +4,7 @@ const { Server } = require('socket.io');
 
 
 const app = express();
- HEAD
+ 
 const server = http.createServer(app);
 const io = new Server(server, { 
   cors: { 
@@ -21,7 +21,7 @@ app.use(express.static(path.join(__dirname)));
 
 
 const httpServer = http.createServer(app);
-const io = new Server(httpServer);
+io = new Server(httpServer);
 
 // Configurar archivos estáticos y ruta principal
 const path = require('path');
@@ -34,7 +34,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
- HEAD
+ 
 // --- TODO LO DE SOCKETS VA DENTRO DE ESTE BLOQUE ---
 io.on('connection', (socket) => {
   console.log('Usuario conectado:', socket.id);
@@ -109,6 +109,7 @@ io.on('connection', (socket) => {
         socket.join(room);
         console.log(`Usuario ${socket.id} se unió a la sala: ${room}`);
     });
+});
 
     socket.on('disconnect', () => {
         console.log('Usuario desconectado:', socket.id);
