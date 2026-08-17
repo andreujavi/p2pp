@@ -5,23 +5,50 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, { 
+  cors: { 
+    origin: '*',
+    methods: ['GET', 'POST']
+  } 
+});
 
-// --- ESTA ES LA PARTE IMPORTANTE ---
-// Esto le dice a Render que busque el index.html en la carpeta actual
-app.use(express.static(__dirname));
+// Servir archivos estáticos desde la misma carpeta
+app.use(express.static(path.join(__dirname)));
 
-// Asegurarse de enviar el index.html explícitamente si la ruta raíz "/" es llamada
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
-// -----------------------------------
 
 io.on('connection', (socket) => {
-    // ... tu lógica de sockets ...
+  console.log('Usuario conectado:', socket.id);
+
+  socket.on('join-room', (room) => {
+    socket.join(room);
+    console.log(`Usuario ${socket.id} unido a la sala:${room}`);
+  });
+
+  socket.on('offer', ({ offer, room }) => {
+    socket.to(room).emit('offer', offer);
+  });
+
+  socket.on('answer', ({ answer, room }) => {
+    socket.to(room).emit('answer', answer);
+  });
+
+  socket.on('ice-candidate', ({ candidate, room }) => {
+    socket.to(room).emit('ice-candidate', candidate);
+  });
+
+  socket.on('chat-message', ({ room, message, sender }) => {
+    socket.to(room).emit('message', { sender, message });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Usuario desconectado:', socket.id);
+  });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Servidor corriendo en puerto ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });

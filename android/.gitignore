@@ -99,3 +99,17 @@ app/src/main/assets/public
 app/src/main/assets/capacitor.config.json
 app/src/main/assets/capacitor.plugins.json
 app/src/main/res/xml/config.xml
+# Ignorar dependencias de Node (nunca se suben, Render las instala solo)
+node_modules/
+
+# Ignorar carpetas de compilación nativa de Android (Capacitor)
+android/
+ios/
+
+# Ignorar archivos de logs o temporales del sistema
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Ignorar archivos de configuración local del entorno si los hubiera
+.env
