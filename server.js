@@ -1,9 +1,10 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const path = require('path');
+
 
 const app = express();
+<<<<<<< HEAD
 const server = http.createServer(app);
 const io = new Server(server, { 
   cors: { 
@@ -18,10 +19,22 @@ socket.on('join-room', (room) => {
 // Servir archivos estáticos desde la carpeta actual o desde 'www'
 app.use(express.static(path.join(__dirname)));
 
+=======
+const httpServer = http.createServer(app);
+const io = new Server(httpServer);
+
+// Configurar archivos estáticos y ruta principal
+const path = require('path');
+
+// Sirve los archivos desde la carpeta actual
+app.use(express.static(path.join(__dirname)));
+
+>>>>>>> fb5f71d49f866e061c2071e9095736c6961738bc
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+<<<<<<< HEAD
 // --- TODO LO DE SOCKETS VA DENTRO DE ESTE BLOQUE ---
 io.on('connection', (socket) => {
   console.log('Usuario conectado:', socket.id);
@@ -88,4 +101,25 @@ socket.on('ice-candidate', async (candidate) => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
+=======
+// Gestión de conexiones WebSockets (Socket.io)
+io.on('connection', (socket) => {
+    console.log('Un usuario se ha conectado:', socket.id);
+
+    // AQUÍ DENTRO debe ir todo lo relacionado con 'socket.on'
+    socket.on('join-room', (room) => {
+        socket.join(room);
+        console.log(`Usuario ${socket.id} se unió a la sala: ${room}`);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Usuario desconectado:', socket.id);
+    });
+});
+
+// Iniciar el servidor
+const PORT = process.env.PORT || 10000;
+httpServer.listen(PORT, () => {
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
+>>>>>>> fb5f71d49f866e061c2071e9095736c6961738bc
 });
