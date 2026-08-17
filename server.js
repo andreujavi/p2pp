@@ -1,13 +1,16 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const path = require('path');
+
 
 const app = express();
 const httpServer = http.createServer(app);
 const io = new Server(httpServer);
 
 // Configurar archivos estáticos y ruta principal
+const path = require('path');
+
+// Sirve los archivos desde la carpeta actual
 app.use(express.static(path.join(__dirname)));
 
 app.get('/', (req, res) => {
