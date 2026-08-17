@@ -1,33 +1,39 @@
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, { 
-  cors: { 
-    origin: '*',
-    methods: ['GET', 'POST']
-  } 
-});
+const httpServer = http.createServer(app);
+const io = new Server(httpServer);
 
-
-
-
-
-// Configurar la carpeta actual como pública para servir archivos estáticos
+// 1. Configurar la ruta de archivos estáticos
+// Si tu index.html está en la raíz del proyecto, usa '__dirname'. 
+// Si estuviera dentro de 'src', cambia a path.join(__dirname, 'src')
 app.use(express.static(path.join(__dirname)));
 
-// Ruta explícita para la página principal
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// (Aquí debajo mantén el resto de tu código de Socket.io y el listen del puerto)
-
+// 2. Gestión de conexiones WebSockets (Socket.io)
 io.on('connection', (socket) => {
-  console.log('Usuario conectado:', socket.id);
+    console.log('Un usuario se ha conectado:', socket.id);
+
+    socket.on('disconnect', () => {
+        console.log('Usuario desconectado:', socket.id);
+    });
+});
+
+// 3. Iniciar el servidor (Declarado una única vez con httpServer)
+const PORT = process.env.PORT || 10000;
+httpServer.listen(PORT, () => {
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
+});
+
+
+
 
   socket.on('join-room', (room) => {
     socket.join(room);
@@ -50,12 +56,6 @@ io.on('connection', (socket) => {
     socket.to(room).emit('message', { sender, message });
   });
 
-  socket.on('disconnect', () => {
-    console.log('Usuario desconectado:', socket.id);
-  });
-});
+ 
 
-const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
-    console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
+
