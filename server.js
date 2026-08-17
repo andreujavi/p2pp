@@ -114,7 +114,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('Usuario desconectado:', socket.id);
     });
-});
+
 
 // Iniciar el servidor
 const PORT = process.env.PORT || 10000;
