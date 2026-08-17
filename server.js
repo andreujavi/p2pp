@@ -5,23 +5,87 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, { 
+  cors: { 
+    origin: '*',
+    methods: ['GET', 'POST']
+  } 
+});
+socket.on('join-room', (room) => {
+    socket.join(room);
+    console.log(`Usuario ${socket.id} se unió a la sala: ${room}`);
+});
+// Servir archivos estáticos desde la carpeta actual o desde 'www'
+app.use(express.static(path.join(__dirname)));
 
-// --- ESTA ES LA PARTE IMPORTANTE ---
-// Esto le dice a Render que busque el index.html en la carpeta actual
-app.use(express.static(__dirname));
-
-// Asegurarse de enviar el index.html explícitamente si la ruta raíz "/" es llamada
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
-// -----------------------------------
 
+// --- TODO LO DE SOCKETS VA DENTRO DE ESTE BLOQUE ---
 io.on('connection', (socket) => {
-    // ... tu lógica de sockets ...
+  console.log('Usuario conectado:', socket.id);
+
+  function entrarSala() {
+    const salaInput = document.getElementById('nombreSala').value; // El input donde escribes la sala
+    if (salaInput) {
+        console.log("Enviando evento join-room con sala:", salaInput);
+        socket.emit('join-room', salaInput);
+    } else {
+        alert("Escribe un nombre de sala válido");
+    }
+}
+
+  socket.on('offer', ({ offer, room }) => {
+    socket.to(room).emit('offer', offer);
+  });
+
+  socket.on('answer', ({ answer, room }) => {
+    socket.to(room).emit('answer', answer);
+  });
+
+  socket.on('ice-candidate', ({ candidate, room }) => {
+    socket.to(room).emit('ice-candidate', candidate);
+  });
+
+  socket.on('chat-message', ({ room, message, sender }) => {
+    socket.to(room).emit('message', { sender, message });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Usuario desconectado:', socket.id);
+  });
 });
 
+const socket = io('https://p2pp-fz5u.onrender.com:10000', {
+    transports: ['websocket', 'polling']
+});
+// --------------------------------------------------
+socket.on('offer', async (offer) => {
+    console.log("¡Oferta recibida del otro usuario!");
+    if (!localStream) {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.srcObject = localStream;
+    }
+    createPeerConnection();
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    socket.emit('answer', { answer, room: currentRoom });
+});
+
+socket.on('answer', async (answer) => {
+    console.log("¡Respuesta recibida del otro usuario!");
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+});
+
+socket.on('ice-candidate', async (candidate) => {
+    console.log("Candidato ICE recibido");
+    if (peerConnection) {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    }
+});
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Servidor corriendo en puerto ${PORT}`);
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });

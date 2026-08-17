@@ -1,5 +1,9 @@
 {
-  "appId": "com.xavi.p2p",
-  "appName": "P2P",
-  "webDir": "www"
+  "appId": "com.conectamadera.p2p",
+  "appName": "P2PApp",
+  "webDir": "src",
+  "server": {
+    "url": "https://p2pp-fz5u.onrender.com",
+    "cleartext": true
+  }
 }
