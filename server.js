@@ -12,12 +12,19 @@ const io = new Server(server, {
   } 
 });
 
-// Servir archivos estáticos desde la misma carpeta
+
+
+
+
+// Configurar la carpeta actual como pública para servir archivos estáticos
 app.use(express.static(path.join(__dirname)));
 
+// Ruta explícita para la página principal
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
+
+// (Aquí debajo mantén el resto de tu código de Socket.io y el listen del puerto)
 
 io.on('connection', (socket) => {
   console.log('Usuario conectado:', socket.id);
@@ -49,6 +56,6 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+const server = app.listen(PORT, () => {
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
