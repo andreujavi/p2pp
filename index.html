@@ -56,10 +56,24 @@
             </form>
         </div>
     </div>
-
+    <script src="/socket.io/socket.io.js"></script>
     <script>
+
+
+        // 2. Conectar al servidor de Render (o usar detección automática si se abre desde la web o la app)
+        const SERVER_URL = "https://p2pp-fz5u.onrender.com";
+        const socket = io(SERVER_URL);
+
+        socket.on('connect', () => {
+            console.log('¡Conectado al servidor con ID:', socket.id);
+            document.getElementById('status').innerText = 'Conectado al servidor en la nube 🚀';
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('status').innerText = 'Desconectado del servidor...';
+        });
         // SI ESTÁS EN EL MÓVIL, CAMBIA 'localhost' POR TU IP DE RED (ej: 192.168.1.50)
-        const socket = io('http://192.168.1.150:3000');
+        
         
         socket.on('connect', () => console.log('Conectado al servidor con ID:', socket.id));
 
