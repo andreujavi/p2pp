@@ -26,12 +26,11 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = 3000;
+const PORT = 10000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`\n=============================================`);
     console.log(` SERVIDOR MULTIMEDIA ACTIVO Y REAL`);
     console.log(`=============================================`);
-    console.log(`> Abre en tu PC: http://localhost:${PORT}`);
-    console.log(`> Abre en tu Móvil/Tablet: http://192.168.1.150:${PORT}`);
+    
     console.log(`=============================================0\n`);
 });
