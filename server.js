@@ -8,7 +8,9 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // Servir archivos estáticos desde la raíz
-app.use(express.static(path.join(__dirname)));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html')); // Cambia 'tu-archivo.html' por el nombre real de tu archivo
+});
 
 // Configuración de Socket.io
 io.on('connection', (socket) => {
