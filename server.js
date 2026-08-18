@@ -7,7 +7,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // Servir la página web desde la misma carpeta
-app.use(express.static(path.join(__dirname, 'src')));
+app.use(express.static(path.join(__dirname)));
 
 io.on('connection', (socket) => {
     console.log(`> Dispositivo conectado: ${socket.id}`);
