@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P App - ConectaMadera</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background: #121212; color: #fff; }
+        input, button { padding: 10px; margin: 5px; font-size: 16px; }
+        button { background: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background: #45a049; }
+    </style>
+</head>
+<body>
+
+    <h1>Aplicación P2P & Chat</h1>
+    <div id="status">Conectando al servidor...</div>
+
+    <div style="margin-top: 20px;">
+        <input type="text" id="roomInput" placeholder="Nombre de la sala...">
+        <!-- Botón que llama a startCall sin errores -->
+        <button onclick="startCall()">Entrar a la Sala / Iniciar</button>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <video id="localVideo" autoplay playsinline muted style="width: 45%; max-width: 400px; background: #000;"></video>
+        <video id="remoteVideo" autoplay playsinline style="width: 45%; max-width: 400px; background: #000;"></video>
+    </div>
+
+    <!-- Cargar Socket.io desde el servidor -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        // Conectar al servidor de Render de forma segura
+        const socket = io("https://p2pp-fz5u.onrender.com", {
+            transports: ['websocket', 'polling']
+        });
+         const iceServers = {
+     iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+
+        
+{
+            urls: [
+                'turn:free.expressturn.com:3478:3478',
+                
+            ],
+            username: '000000002102154901',
+            credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
+        }
+
+
+    ]
+  };
+        socket.on('connect', () => {
+            console.log('Conectado con ID:', socket.id);
+            document.getElementById('status').innerText = 'Conectado al servidor en la nube 🚀';
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('status').innerText = 'Desconectado del servidor...';
+        });
+
+        // Función que el botón estaba buscando y daba error
+        function startCall() {
+            const roomName = document.getElementById('roomInput').value.trim();
+            if (!roomName) {
+                alert("Por favor, escribe un nombre de sala.");
+                return;
+            }
+
+            console.log("Uniéndose a la sala:", roomName);
+            // Envía el evento al servidor que configuramos en server.js
+            socket.emit('join-room', roomName);
+            document.getElementById('status').innerText = `En la sala: ${roomName} 🟢`;
+        }
+    </script>
+</body>
+</html>
