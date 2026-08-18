@@ -35,7 +35,27 @@
         const socket = io("https://p2pp-fz5u.onrender.com", {
             transports: ['websocket', 'polling']
         });
+         const iceServers = {
+     iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
 
+        
+{
+            urls: [
+                'turn:free.expressturn.com:3478:3478',
+                
+            ],
+            username: '000000002102154901',
+            credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
+        }
+
+
+    ]
+  };
         socket.on('connect', () => {
             console.log('Conectado con ID:', socket.id);
             document.getElementById('status').innerText = 'Conectado al servidor en la nube 🚀';
