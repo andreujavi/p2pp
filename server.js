@@ -1,32 +1,42 @@
 const express = require('express');
 const http = require('http');
-const path = require('path');
 const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Servir archivos estáticos desde la carpeta actual o src
-app.use(express.static(path.join(__dirname)));
+// Servir la página web desde la misma carpeta
+app.use(express.static(__dirname));
 
-// Configuración de eventos en tiempo real con Socket.io
 io.on('connection', (socket) => {
-    console.log('Un usuario se ha conectado:', socket.id);
+    console.log(`> Dispositivo conectado: ${socket.id}`);
 
-    // Evento para unirse a una sala específica (útil para tu app P2P/chat)
-    socket.on('join-room', (room) => {
-        socket.join(room);
-        console.log(`Usuario ${socket.id} unido a la sala: ${room}`);
+    // Retransmitir mensajes de texto del chat
+    socket.on('chat_message', (data) => {
+        socket.broadcast.emit('chat_message', data);
+    });
+
+    // Retransmitir el vídeo y audio de la cámara en vivo
+    socket.on('video-stream', (data) => {
+        socket.broadcast.emit('video-stream', {
+            id: socket.id,
+            image: data.image
+        });
     });
 
     socket.on('disconnect', () => {
-        console.log('Usuario desconectado:', socket.id);
+        console.log(`> Dispositivo desconectado: ${socket.id}`);
+        socket.broadcast.emit('user-disconnected', socket.id);
     });
 });
 
-// Configuración del puerto compatible con Render y entorno local
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Servidor corriendo en el puerto ${PORT}`);
+const PORT = 3000;
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n=============================================`);
+    console.log(` SERVIDOR MULTIMEDIA ACTIVO Y REAL`);
+    console.log(`=============================================`);
+    console.log(`> Abre en tu PC: http://localhost:${PORT}`);
+    console.log(`> Abre en tu Móvil/Tablet: http://[IP-DE-TU-PC]:${PORT}`);
+    console.log(`=============================================0\n`);
 });
