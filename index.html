@@ -2,193 +2,261 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ConectaMadera P2P</title>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            min-height: 100vh; 
-            background: linear-gradient(135deg, #5c3a21 0%, #3b2211 100%); 
-            color: #f4e3c1; font-family: sans-serif; padding: 20px; 
-            display: flex; flex-direction: column; align-items: center; 
-        }
-        h1 { color: #d4a373; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-        .lobby { width: 100%; max-width: 500px; background: #4a2e18; padding: 20px; border-radius: 12px; border: 2px solid #8b5a2b; }
-        .contact-item { display: flex; justify-content: space-between; align-items: center; background: #5c3a21; padding: 12px; margin: 8px 0; border-radius: 8px; }
-        .call-button { background: #bc6c25; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
-        .room-container { display: none; width: 100%; max-width: 700px; flex-direction: column; gap: 15px; }
-        .video-container { position: relative; width: 100%; height: 450px; background: #000; border-radius: 12px; border: 3px solid #8b5a2b; overflow: hidden; }
-        #remoteVideo { width: 100%; height: 100%; object-fit: cover; }
-        .local-video-box { position: absolute; bottom: 15px; right: 15px; width: 120px; height: 160px; background: #222; border-radius: 8px; border: 2px solid #dda15e; overflow: hidden; }
-        #localVideo { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .chat-box { background: #4a2e18; border-radius: 12px; border: 2px solid #8b5a2b; padding: 10px; height: 180px; display: flex; flex-direction: column; }
-        .messages-container { flex: 1; overflow-y: auto; padding: 5px; }
-        .msg { background: #5c3a21; padding: 6px; border-radius: 4px; margin-bottom: 5px; border-left: 4px solid #dda15e; font-size: 13px; }
-        .chat-form { display: flex; gap: 8px; margin-top: 8px; }
-        .chat-input { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #8b5a2b; background: #2c1810; color: #fff; }
-        .send-button { background: #dda15e; color: #2c1810; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>P2P Dual-Zone Universal</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <h1>ConectaMadera P2P</h1>
+    <header>
+        <h1 style="font-size: 12px; font-weight: bold;">P2P Dual-Zone (Cámaras + Chat)</h1>
+        <button id="switchCameraBtn">🔄 Cambiar Cámara</button>
+    </header>
 
-    <div id="lobby" class="lobby">
-        <h2>Selecciona contacto:</h2>
-        <ul style="list-style: none;">
-            <li class="contact-item"><span>Amigo 1</span><button class="call-button" onclick="startCall('sala_1')">Llamar</button></li>
-        </ul>
-    </div>
-
-    <div id="roomContainer" class="room-container">
-        <div class="video-container">
-            <video id="remoteVideo" autoplay playsinline></video>
-            <div class="local-video-box">
-                <video id="localVideo" autoplay playsinline muted></video>
-            </div>
-        </div>
-        <div class="chat-box">
-            <div id="messagesContainer" class="messages-container"></div>
-            <form class="chat-form" onsubmit="sendMessage(event)">
-                <input type="text" id="messageInput" class="chat-input" placeholder="Mensaje..." autocomplete="off">
-                <button type="submit" class="send-button">Enviar</button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        // SI ESTÁS EN EL MÓVIL, CAMBIA 'localhost' POR TU IP DE RED (ej: 192.168.1.50)
-        const socket = io('http://192.168.1.150:3000');
+    <main class="main-container">
         
-        socket.on('connect', () => console.log('Conectado al servidor con ID:', socket.id));
+        <!-- ZONA 1: CÁMARAS -->
+        <section class="zone-cameras">
+            <h2 class="section-title">Zona 1: Cámaras</h2>
+            
+            <div class="cameras-grid">
+                <!-- Mi Cámara -->
+                <div class="camera-box">
+                    <span>Mi Dispositivo</span>
+                    <div class="video-wrapper">
+                        <video id="localVideo" autoplay playsinline muted></video>
+                    </div>
+                </div>
 
-        let currentRoom = '';
+                <!-- Cámara Remota -->
+                <div class="camera-box">
+                    <span>Remoto (Peer)</span>
+                    <div class="video-wrapper">
+                        <video id="remoteVideo" autoplay playsinline></video>
+                        <div id="noCamMessage" class="no-cam-text">Esperando...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controles de Conexión Automática -->
+            <div style="background-color: #0f172a; padding: 6px; border-radius: 6px; border: 1px solid #1e293b; display: flex; flex-direction: column; gap: 4px; margin-top: auto;">
+                <button id="connectServerBtn" class="btn-success" style="width: 100%;">Conectar a la Sala P2P</button>
+                <span id="connectionStatus" style="font-size: 9px; color: #94a3b8; text-align: center;">Estado: Desconectado</span>
+            </div>
+        </section>
+
+        <!-- ZONA 2: CHAT DE TEXTO -->
+        <section class="zone-chat">
+            <h2 class="section-title">Zona 2: Chat P2P</h2>
+            
+            <div id="chatMessages" class="chat-messages">
+                <div style="color: #64748b; text-align: center; font-size: 10px;">Los mensajes y cámaras se conectan automáticamente.</div>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="messageInput" placeholder="Escribe un mensaje...">
+                <button id="sendBtn">Enviar</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Script de Socket.io (Apunta a tu Render o IP local) -->
+    <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+    <script>
+       
+
+        const socket = io(); 
+       
         let localStream;
         let peerConnection;
-        
-        // Servidores STUN reforzados para evitar problemas de conexión de cámara
-       const servers = {
-    iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' }
-    ]
-};
+        let dataChannel;
+        let useFrontCamera = true;
+
+      function initPeer() {
+      peer = new Peer({
+        config: {
+            'iceServers': [
+                // 1. Servidor STUN gratuito de Google (descubre IP pública)
+                { urls: 'stun:stun.l.google.com:19302' },
+                
+                // 2. Servidores TURN de ExpressTURN (Evitan bloqueos de red y NAT estricto)
+                {
+                    urls: [
+                        'turn:global.expressturn.com:3478?transport=udp',
+                        'turn:global.expressturn.com:3478?transport=tcp',
+                        'turn:global.expressturn.com:80',
+                        'turn:global.expressturn.com:443'
+                    ],
+                    username: '000000002102154901',     // Proporcionado en tu panel de ExpressTURN
+                    credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='   // Tu contraseña o clave secreta
+                }
+            ]
+        }
+    });
+
+    peer.on('open', (id) => {
+        myIdSpan.textContent = id;
+        console.log("Conectado al servidor de señalización con ID:", id);
+    });
+
+    // Control de desconexiones para evitar que la app muera
+    peer.on('disconnected', () => {
+        console.warn("Desconectado del servidor. Intentando reconectar...");
+        setTimeout(() => {
+            peer.reconnect();
+        }, 3000);
+    });
+
+    peer.on('error', (err) => {
+        console.error("Error en PeerJS:", err);
+    });
+}
 
 
         const localVideo = document.getElementById('localVideo');
         const remoteVideo = document.getElementById('remoteVideo');
-        const lobby = document.getElementById('lobby');
-        const roomContainer = document.getElementById('roomContainer');
-        const messagesContainer = document.getElementById('messagesContainer');
+        const noCamMessage = document.getElementById('noCamMessage');
+        const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
+        const connectionStatus = document.getElementById('connectionStatus');
 
-        async function startCall(roomName) {
-            currentRoom = roomName;
-            lobby.style.display = 'none';
-            roomContainer.style.display = 'flex';
-
+        async function initCamera() {
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                if (localStream) localStream.getTracks().forEach(t => t.stop());
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: useFrontCamera ? 'user' : 'environment', width: 640, height: 480 },
+                    audio: true
+                });
                 localVideo.srcObject = localStream;
-                
-                socket.emit('join-room', roomName);
-                createPeerConnection();
-                
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                socket.emit('offer', { offer, room: currentRoom });
-            } catch (error) {
-                alert('Error de cámara/mic: ' + error.message);
+            } catch (err) {
+                console.error("Error de cámara:", err);
+                alert("Permiso de cámara denegado o no disponible.");
             }
         }
 
+        document.getElementById('switchCameraBtn').addEventListener('click', async () => {
+            useFrontCamera = !useFrontCamera;
+            await initCamera();
+            if (peerConnection) {
+                const videoTrack = localStream.getVideoTracks()[0];
+                const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+                if (sender) sender.replaceTrack(videoTrack);
+            }
+        });
+
+        document.getElementById('connectServerBtn').addEventListener('click', () => {
+            socket.emit('join-room', 'sala-universal-p2p');
+            connectionStatus.innerText = "Estado: Buscando dispositivo en la sala...";
+            
+            // Iniciar llamada creando oferta
+            startCall();
+        });
+
         function createPeerConnection() {
-            peerConnection = new RTCPeerConnection(servers);
-            
+            if (peerConnection) return;
+            peerConnection = new RTCPeerConnection(rtcConfig);
+
+            // Añadir pistas de vídeo y audio locales
             localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            
-            peerConnection.ontrack = event => { 
-                console.log("Vídeo remoto recibido");
-                remoteVideo.srcObject = event.streams[0]; 
+
+            // Recibir vídeo remoto
+            peerConnection.ontrack = (event) => {
+                noCamMessage.style.display = 'none';
+                remoteVideo.srcObject = event.streams[0];
+                connectionStatus.innerText = "Estado: Conectado (Cámara y Chat Activos)";
             };
-            
-            peerConnection.onicecandidate = event => {
-                if (event.candidate) socket.emit('ice-candidate', { candidate: event.candidate, room: currentRoom });
+
+            // Intercambiar candidatos ICE
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('ice-candidate', event.candidate);
+                }
             };
+        }
+
+        async function startCall() {
+            createPeerConnection();
+            
+            // Crear canal de datos para el chat
+            dataChannel = peerConnection.createDataChannel("chat");
+            setupDataChannel();
+
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit('offer', offer);
         }
 
         socket.on('offer', async (offer) => {
-            if (!localStream) {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                localVideo.srcObject = localStream;
-            }
             createPeerConnection();
+
+            peerConnection.ondatachannel = (event) => {
+                dataChannel = event.channel;
+                setupDataChannel();
+            };
+
             await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
-            socket.emit('answer', { answer, room: currentRoom });
+            socket.emit('answer', answer);
+            connectionStatus.innerText = "Estado: Conectado (Cámara y Chat Activos)";
         });
 
-        socket.on('answer', async (answer) => { await peerConnection.setRemoteDescription(new RTCSessionDescription(answer)); });
-        socket.on('ice-candidate', async (candidate) => { if (peerConnection) await peerConnection.addIceCandidate(new RTCIceCandidate(candidate)); });
+        socket.on('answer', async (answer) => {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        });
 
-        function sendMessage(e) {
-            e.preventDefault();
+        socket.on('ice-candidate', async (candidate) => {
+            if (peerConnection) {
+                try {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch (e) {
+                    console.error("Error al añadir ICE candidate", e);
+                }
+            }
+        });
+
+        function setupDataChannel() {
+            dataChannel.onopen = () => appendSystemMessage("¡Canal de Chat P2P conectado!");
+            dataChannel.onmessage = (event) => {
+                appendMessage("Remoto", event.data, "background-color: #1e293b; margin-right: auto;");
+            };
+        }
+
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+        function sendMessage() {
             const text = messageInput.value.trim();
-            if (text) {
-                socket.emit('chat-message', { room: currentRoom, message: text, sender: 'Tú' });
-                appendMessage('Tú', text);
-                messageInput.value = '';
+            if (!text) return;
+            if (dataChannel && dataChannel.readyState === 'open') {
+                dataChannel.send(text);
+                appendMessage("Tú", text, "background-color: #4f46e5; margin-left: auto;");
+                messageInput.value = "";
+            } else {
+                alert("El chat P2P aún no está conectado.");
             }
         }
 
-        socket.on('message', (data) => { appendMessage(data.sender, data.message); });
-
-        function appendMessage(sender, text) {
+        function appendMessage(sender, text, style) {
             const div = document.createElement('div');
-            div.className = 'msg';
-            div.innerHTML = `<strong>${sender}:</strong> ${text}`;
-            messagesContainer.appendChild(div);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            div.style.cssText = `padding: 4px 8px; border-radius: 4px; max-width: 80%; font-size: 11px; ${style}`;
+            div.innerHTML = `<strong style="font-size: 9px; display: block; color: #cbd5e1;">${sender}</strong>${text}`;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        function appendSystemMessage(text) {
+            const div = document.createElement('div');
+            div.style.cssText = "color: #10b981; text-align: center; font-size: 10px; margin: 2px 0;";
+            div.innerText = text;
+            chatMessages.appendChild(div);
+        }
+
+        initCamera();
 
 
-        async function startCall(roomName) {
-    console.log("Intentando entrar en la sala:", roomName);
-    currentRoom = roomName;
-    
-    // Comprobación de seguridad para evitar el error exacto de getUserMedia
-    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
-        alert('Error: Tu navegador bloquea la cámara porque estás accediendo mediante HTTP inseguro o IP local sin permisos. Usa "http://localhost:3000" en tu PC.');
-        return;
-    }
-
-    lobby.style.display = 'none';
-    roomContainer.style.display = 'flex';
-
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        localVideo.srcObject = localStream;
-        
-        socket.emit('join-room', roomName);
-        createPeerConnection();
-        
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        socket.emit('offer', { offer, room: currentRoom });
-        console.log("Oferta creada y enviada a la sala.");
-    } catch (error) {
-        alert('No se pudo acceder a la cámara o micrófono: ' + error.message);
-        console.error(error);
-        lobby.style.display = 'block';
-        roomContainer.style.display = 'none';
-    }
-}
+     
     </script>
 </body>
 </html>
