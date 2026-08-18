@@ -1,33 +1,26 @@
 const express = require('express');
 const http = require('http');
+const path = require('path'); // <--- ¡Esta línea es la que falta y causa el error!
 const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Servir la página web desde la misma carpeta
+// Servir archivos estáticos desde la raíz
 app.use(express.static(path.join(__dirname)));
 
+// Configuración de Socket.io
 io.on('connection', (socket) => {
-    console.log(`> Dispositivo conectado: ${socket.id}`);
+    console.log('Un usuario se ha conectado:', socket.id);
 
-    // Retransmitir mensajes de texto del chat
-    socket.on('chat_message', (data) => {
-        socket.broadcast.emit('chat_message', data);
-    });
-
-    // Retransmitir el vídeo y audio de la cámara en vivo
-    socket.on('video-stream', (data) => {
-        socket.broadcast.emit('video-stream', {
-            id: socket.id,
-            image: data.image
-        });
+    socket.on('join-room', (room) => {
+        socket.join(room);
+        console.log(`Usuario unido a la sala: ${room}`);
     });
 
     socket.on('disconnect', () => {
-        console.log(`> Dispositivo desconectado: ${socket.id}`);
-        socket.broadcast.emit('user-disconnected', socket.id);
+        console.log('Usuario desconectado');
     });
 });
 
@@ -37,6 +30,6 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(` SERVIDOR MULTIMEDIA ACTIVO Y REAL`);
     console.log(`=============================================`);
     console.log(`> Abre en tu PC: http://localhost:${PORT}`);
-    console.log(`> Abre en tu Móvil/Tablet: http://[IP-DE-TU-PC]:${PORT}`);
+    console.log(`> Abre en tu Móvil/Tablet: http://192.168.1.150:${PORT}`);
     console.log(`=============================================0\n`);
 });
