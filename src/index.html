@@ -61,13 +61,15 @@
 
        
 
-// ⬇️ PEGA AQUÍ TU URL DE RENDER ENTRE LAS COMILLAS ⬇️
-   // Detecta automáticamente si estás en local o en Render
-    const URL_SERVIDOR = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:3000' 
-        : 'https://p2pp-fz5u.onrender.com'; // <--- Cambia esto por tu URL real de Render
 
+    const URL_SERVIDOR = "https://p2pp-fz5u.onrender.com";
+
+    // Inicializamos Socket.io con esa dirección
     const socket = io(URL_SERVIDOR);
+
+    
+    
+    
 
     // El resto de tu código de eventos y sonidos...
     socket.on('connect', () => {
