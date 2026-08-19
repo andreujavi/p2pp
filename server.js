@@ -8,8 +8,9 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // Servir archivos estáticos desde la raíz
-app.use(express.static(path.join(__dirname, 'src')));
 
+
+app.use(express.static(path.join(__dirname)));
 // Configuración de eventos en tiempo real con Socket.io
 io.on('connection', (socket) => {
     console.log('Un usuario se ha conectado:', socket.id);
