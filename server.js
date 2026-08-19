@@ -7,10 +7,11 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Servir archivos estáticos desde la raíz
 
 
-app.use(express.static(path.join(__dirname)));
+// Si index.js / index.html está en la raíz junto al server.js:
+app.use(express.static(path.join(__dirname, 'src')));
+
 // Configuración de eventos en tiempo real con Socket.io
 io.on('connection', (socket) => {
     console.log('Un usuario se ha conectado:', socket.id);
@@ -51,3 +52,7 @@ io.on('connection', (socket) => {
     });
 });
 
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Servidor local corriendo en http://localhost:${PORT}`);
+});
