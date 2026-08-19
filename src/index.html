@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConectaMadera P2P</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            min-height: 100vh; 
+            background: linear-gradient(135deg, #5c3a21 0%, #3b2211 100%); 
+            color: #f4e3c1; font-family: sans-serif; padding: 20px; 
+            display: flex; flex-direction: column; align-items: center; 
+        }
+        h1 { color: #d4a373; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .lobby { width: 100%; max-width: 500px; background: #4a2e18; padding: 20px; border-radius: 12px; border: 2px solid #8b5a2b; }
+        .contact-item { display: flex; justify-content: space-between; align-items: center; background: #5c3a21; padding: 12px; margin: 8px 0; border-radius: 8px; }
+        .call-button { background: #bc6c25; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+        .room-container { display: none; width: 100%; max-width: 700px; flex-direction: column; gap: 15px; }
+        .video-container { position: relative; width: 100%; height: 450px; background: #000; border-radius: 12px; border: 3px solid #8b5a2b; overflow: hidden; }
+        #remoteVideo { width: 100%; height: 100%; object-fit: cover; }
+        .local-video-box { position: absolute; bottom: 15px; right: 15px; width: 120px; height: 160px; background: #222; border-radius: 8px; border: 2px solid #dda15e; overflow: hidden; }
+        #localVideo { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .chat-box { background: #4a2e18; border-radius: 12px; border: 2px solid #8b5a2b; padding: 10px; height: 180px; display: flex; flex-direction: column; }
+        .messages-container { flex: 1; overflow-y: auto; padding: 5px; }
+        .msg { background: #5c3a21; padding: 6px; border-radius: 4px; margin-bottom: 5px; border-left: 4px solid #dda15e; font-size: 13px; }
+        .chat-form { display: flex; gap: 8px; margin-top: 8px; }
+        .chat-input { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #8b5a2b; background: #2c1810; color: #fff; }
+        .send-button { background: #dda15e; color: #2c1810; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h1>ConectaMadera P2P</h1>
+
+    <div id="lobby" class="lobby">
+        <h2>Selecciona contacto:</h2>
+        <ul style="list-style: none;">
+            <li class="contact-item"><span>Amigo 1</span><button class="call-button" onclick="startCall('sala_1')">Llamar</button></li>
+        </ul>
+    </div>
+
+    <div id="roomContainer" class="room-container">
+        <div class="video-container">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <div class="local-video-box">
+                <video id="localVideo" autoplay playsinline muted></video>
+            </div>
+        </div>
+        <div class="chat-box">
+            <div id="messagesContainer" class="messages-container"></div>
+            <form class="chat-form" onsubmit="sendMessage(event)">
+                <input type="text" id="messageInput" class="chat-input" placeholder="Mensaje..." autocomplete="off">
+                <button type="submit" class="send-button">Enviar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+
+       
+
+// ⬇️ PEGA AQUÍ TU URL DE RENDER ENTRE LAS COMILLAS ⬇️
+   // Detecta automáticamente si estás en local o en Render
+    const URL_SERVIDOR = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3000' 
+        : 'https://p2pp-fz5u.onrender.com'; // <--- Cambia esto por tu URL real de Render
+
+    const socket = io(URL_SERVIDOR);
+
+    // El resto de tu código de eventos y sonidos...
+    socket.on('connect', () => {
+        console.log("¡Conectado exitosamente a Render!");
+    });
+
+
+        let currentRoom = '';
+        let localStream;
+        let peerConnection;
+        
+        // Servidores STUN reforzados para evitar problemas de conexión de cámara
+       const servers = {
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+
+
+          { 
+                urls:'turn:free.expressturn.com:3478', // Tu servidor TURN
+                username: '000000002102154901',
+                credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
+            }
+    ]
+};
+
+
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const lobby = document.getElementById('lobby');
+        const roomContainer = document.getElementById('roomContainer');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+
+        async function startCall(roomName) {
+            currentRoom = roomName;
+            lobby.style.display = 'none';
+            roomContainer.style.display = 'flex';
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+                
+                socket.emit('join-room', roomName);
+                createPeerConnection();
+                
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                socket.emit('offer', { offer, room: currentRoom });
+            } catch (error) {
+                alert('Error de cámara/mic: ' + error.message);
+            }
+        }
+
+        function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(servers);
+            
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            
+            peerConnection.ontrack = event => { 
+                console.log("Vídeo remoto recibido");
+                remoteVideo.srcObject = event.streams[0]; 
+            };
+            
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) socket.emit('ice-candidate', { candidate: event.candidate, room: currentRoom });
+            };
+        }
+
+        socket.on('offer', async (offer) => {
+            if (!localStream) {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+            }
+            createPeerConnection();
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('answer', { answer, room: currentRoom });
+        });
+
+        socket.on('answer', async (answer) => { await peerConnection.setRemoteDescription(new RTCSessionDescription(answer)); });
+        socket.on('ice-candidate', async (candidate) => { if (peerConnection) await peerConnection.addIceCandidate(new RTCIceCandidate(candidate)); });
+
+        function sendMessage(e) {
+            e.preventDefault();
+            const text = messageInput.value.trim();
+            if (text) {
+                socket.emit('chat-message', { room: currentRoom, message: text, sender: 'Tú' });
+                appendMessage('Tú', text);
+                messageInput.value = '';
+            }
+        }
+
+        socket.on('message', (data) => { appendMessage(data.sender, data.message); });
+
+        function appendMessage(sender, text) {
+            const div = document.createElement('div');
+            div.className = 'msg';
+            div.innerHTML = `<strong>${sender}:</strong> ${text}`;
+            messagesContainer.appendChild(div);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+
+
+        async function startCall(roomName) {
+    console.log("Intentando entrar en la sala:", roomName);
+    currentRoom = roomName;
+    
+    // Comprobación de seguridad para evitar el error exacto de getUserMedia
+    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+        alert('Error: Tu navegador bloquea la cámara porque estás accediendo mediante HTTP inseguro o IP local sin permisos. Usa "http://localhost:3000" en tu PC.');
+        return;
+    }
+
+    lobby.style.display = 'none';
+    roomContainer.style.display = 'flex';
+
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.srcObject = localStream;
+        
+        socket.emit('join-room', roomName);
+        createPeerConnection();
+        
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        socket.emit('offer', { offer, room: currentRoom });
+        console.log("Oferta creada y enviada a la sala.");
+    } catch (error) {
+        alert('No se pudo acceder a la cámara o micrófono: ' + error.message);
+        console.error(error);
+        lobby.style.display = 'block';
+        roomContainer.style.display = 'none';
+    }
+}
+    </script>
+</body>
+</html>
